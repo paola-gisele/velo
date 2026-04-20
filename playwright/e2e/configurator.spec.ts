@@ -33,7 +33,6 @@ test.describe("Configuração do Veículo", () => {
   });
   test("CT03 - deve atualizar o preço dinamicamente ao selecionar opcionais e redirecionar para checkout", async ({
     app,
-    page,
   }) => {
     await app.configurator.expectPrice("R$ 40.000,00");
 
