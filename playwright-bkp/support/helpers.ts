@@ -1,3 +1,5 @@
+// import { Page } from "@playwright/test";
+
 const getRandomLetters = (length: number): string => {
   const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   let result = "";
@@ -24,3 +26,10 @@ export function generateOrderCode(): string {
 
   return `${prefix}-${section1}${numbers}${letter}${lastNumber}`;
 }
+
+// export async function searchOrder(page: Page, orderNumber: string) {
+//   await page
+//     .getByRole("textbox", { name: "Número do Pedido" })
+//     .fill(orderNumber);
+//   await page.getByRole("button", { name: "Buscar Pedido" }).click();
+// }
