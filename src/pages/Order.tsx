@@ -1,21 +1,21 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import InputMask from 'react-input-mask';
-import { ArrowLeft, Loader2 } from 'lucide-react';
-import { z } from 'zod';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useToast } from '@/hooks/use-toast';
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import InputMask from "react-input-mask";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { z } from "zod";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   useConfiguratorStore,
   calculateTotalPrice,
@@ -24,78 +24,119 @@ import {
   WheelType,
   OPTIONAL_LABELS,
   OPTIONAL_PRICES,
-} from '@/store/configuratorStore';
-import { createOrder } from '@/hooks/useOrders';
-import { supabase } from '@/integrations/supabase/client';
+} from "@/store/configuratorStore";
+import { createOrder } from "@/hooks/useOrders";
+import { supabase } from "@/integrations/supabase/client";
 
-import logo from '@/assets/brand.svg';
-import glacierBlueAero from '@/assets/glacier-blue-aero-wheels.png';
-import glacierBlueSport from '@/assets/glacier-blue-sport-wheels.png';
-import lunarWhiteAero from '@/assets/lunar-white-aero-wheels.png';
-import lunarWhiteSport from '@/assets/lunar-white-sport-wheels.png';
-import midnightBlackAero from '@/assets/midnight-black-aero-wheels.png';
-import midnightBlackSport from '@/assets/midnight-black-sport-wheels.png';
+import logo from "@/assets/brand.svg";
+import glacierBlueAero from "@/assets/glacier-blue-aero-wheels.png";
+import glacierBlueSport from "@/assets/glacier-blue-sport-wheels.png";
+import lunarWhiteAero from "@/assets/lunar-white-aero-wheels.png";
+import lunarWhiteSport from "@/assets/lunar-white-sport-wheels.png";
+import midnightBlackAero from "@/assets/midnight-black-aero-wheels.png";
+import midnightBlackSport from "@/assets/midnight-black-sport-wheels.png";
 
 const exteriorImages: Record<ExteriorColor, Record<WheelType, string>> = {
-  'glacier-blue': {
+  "glacier-blue": {
     aero: glacierBlueAero,
     sport: glacierBlueSport,
   },
-  'lunar-white': {
+  "lunar-white": {
     aero: lunarWhiteAero,
     sport: lunarWhiteSport,
   },
-  'midnight-black': {
+  "midnight-black": {
     aero: midnightBlackAero,
     sport: midnightBlackSport,
   },
 };
 
 const stores = [
-  'Velô Paulista - Av. Paulista, 1000',
-  'Velô Faria Lima - Av. Faria Lima, 2500',
-  'Velô Morumbi - Av. Morumbi, 1500',
-  'Velô Ibirapuera - Av. Ibirapuera, 3000',
+  "Velô Paulista - Av. Paulista, 1000",
+  "Velô Faria Lima - Av. Faria Lima, 2500",
+  "Velô Morumbi - Av. Morumbi, 1500",
+  "Velô Ibirapuera - Av. Ibirapuera, 3000",
 ];
 
+const onlyDigits = (value: string): string => value.replace(/\D/g, "");
+
+const isValidCpf = (value: string): boolean => {
+  const cpf = onlyDigits(value);
+  if (cpf.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(cpf)) return false;
+
+  const calcDigit = (base: string, factor: number): number => {
+    let total = 0;
+    for (let i = 0; i < base.length; i++) {
+      total += Number(base[i]) * (factor - i);
+    }
+    const mod = total % 11;
+    return mod < 2 ? 0 : 11 - mod;
+  };
+
+  const d1 = calcDigit(cpf.slice(0, 9), 10);
+  const d2 = calcDigit(cpf.slice(0, 10), 11);
+  return cpf.endsWith(`${d1}${d2}`);
+};
+
+const isValidEmailStrict = (value: string): boolean => {
+  const email = value.trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return false;
+  if (email.includes("@.") || email.includes("..")) return false;
+  return true;
+};
+
 const orderSchema = z.object({
-  name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
-  surname: z.string().min(2, 'Sobrenome deve ter pelo menos 2 caracteres'),
-  email: z.string().email('Email inválido'),
-  phone: z.string().min(14, 'Telefone inválido'),
-  cpf: z.string().min(14, 'CPF inválido'),
-  store: z.string().min(1, 'Selecione uma loja'),
-  terms: z.boolean().refine((val) => val === true, 'Aceite os termos'),
+  name: z.string().trim().min(2, "Nome deve ter pelo menos 2 caracteres"),
+  lastname: z
+    .string()
+    .trim()
+    .min(2, "Sobrenome deve ter pelo menos 2 caracteres"),
+  email: z
+    .string()
+    .trim()
+    .email("Email inválido")
+    .refine(isValidEmailStrict, "Email inválido"),
+  phone: z
+    .string()
+    .refine((val) => onlyDigits(val).length === 11, "Telefone inválido"),
+  document: z.string().refine((val) => isValidCpf(val), "CPF inválido"),
+  store: z.string().min(1, "Selecione uma loja"),
+  terms: z.boolean().refine((val) => val === true, "Aceite os termos"),
 });
 
 type FormData = z.infer<typeof orderSchema>;
 
 const colorLabels: Record<ExteriorColor, string> = {
-  'glacier-blue': 'Glacier Blue',
-  'lunar-white': 'Lunar White',
-  'midnight-black': 'Midnight Black',
+  "glacier-blue": "Glacier Blue",
+  "lunar-white": "Lunar White",
+  "midnight-black": "Midnight Black",
 };
 
 const Order = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { configuration, resetConfiguration } = useConfiguratorStore();
-  const [paymentMethod, setPaymentMethod] = useState<'avista' | 'financiamento'>('avista');
+  const [paymentMethod, setPaymentMethod] = useState<
+    "avista" | "financiamento"
+  >("avista");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>(
+    {},
+  );
   const [entryValue, setEntryValue] = useState<number>(0);
   const [formData, setFormData] = useState<FormData>({
-    name: '',
-    surname: '',
-    email: '',
-    phone: '',
-    cpf: '',
-    store: '',
+    name: "",
+    lastname: "",
+    email: "",
+    phone: "",
+    document: "",
+    store: "",
     terms: false,
   });
 
   const totalPrice = calculateTotalPrice(configuration);
-  
+
   // Cálculo dinâmico das parcelas baseado no valor da entrada
   // Parcela = (Total - Entrada) / 12 * 1.02
   const amountToFinance = Math.max(0, totalPrice - entryValue);
@@ -126,23 +167,27 @@ const Order = () => {
 
     setIsSubmitting(true);
 
-    let orderStatus: 'APROVADO' | 'REPROVADO' | 'EM_ANALISE' = 'APROVADO';
+    let orderStatus: "APROVADO" | "REPROVADO" | "EM_ANALISE" = "APROVADO";
 
     // Análise de crédito apenas para financiamento
-    if (paymentMethod === 'financiamento') {
+    if (paymentMethod === "financiamento") {
       try {
-        const { data, error } = await supabase.functions.invoke('credit-analysis', {
-          body: { cpf: formData.cpf },
-        });
+        const { data, error } = await supabase.functions.invoke(
+          "credit-analysis",
+          {
+            body: { cpf: formData.document },
+          },
+        );
 
-        if (error || !data || typeof data.score !== 'number') {
-          console.error('Credit analysis error:', error || 'Invalid response');
+        if (error || !data || typeof data.score !== "number") {
+          console.error("Credit analysis error:", error || "Invalid response");
           toast({
-            title: 'Erro',
-            description: 'Falha ao consultar análise de crédito. Verifique seus dados ou tente mais tarde.',
-            variant: 'destructive',
+            title: "Erro",
+            description:
+              "Falha ao consultar análise de crédito. Verifique seus dados ou tente mais tarde.",
+            variant: "destructive",
             // @ts-ignore - data-testid para testes
-            'data-testid': 'toast-error',
+            "data-testid": "toast-error",
           });
           setIsSubmitting(false);
           return;
@@ -154,44 +199,45 @@ const Order = () => {
         // Regras de Decisão (Ordem de Avaliação)
         // 1️⃣ Regra da Entrada Alta: SE (Entrada >= 50% do Total) E (Score < 700) → APROVADO
         if (entryPercentage >= 0.5 && score < 700) {
-          orderStatus = 'APROVADO';
+          orderStatus = "APROVADO";
         }
         // 2️⃣ Score Alto: SE Score > 700 → APROVADO
         else if (score > 700) {
-          orderStatus = 'APROVADO';
+          orderStatus = "APROVADO";
         }
         // 3️⃣ Score Médio: SE Score entre 501 e 700 → EM_ANALISE
         else if (score >= 501 && score <= 700) {
-          orderStatus = 'EM_ANALISE';
+          orderStatus = "EM_ANALISE";
         }
         // 4️⃣ Score Baixo: SE Score <= 500 → REPROVADO
         else {
-          orderStatus = 'REPROVADO';
+          orderStatus = "REPROVADO";
         }
-
       } catch (err) {
-        console.error('Credit analysis network error:', err);
+        console.error("Credit analysis network error:", err);
         toast({
-          title: 'Erro',
-          description: 'Falha ao consultar análise de crédito. Verifique seus dados ou tente mais tarde.',
-          variant: 'destructive',
+          title: "Erro",
+          description:
+            "Falha ao consultar análise de crédito. Verifique seus dados ou tente mais tarde.",
+          variant: "destructive",
           // @ts-ignore - data-testid para testes
-          'data-testid': 'toast-error',
+          "data-testid": "toast-error",
         });
         setIsSubmitting(false);
         return;
       }
     }
 
-    const finalPrice = paymentMethod === 'financiamento' 
-      ? (entryValue + totalFinanced) 
-      : totalPrice;
+    const finalPrice =
+      paymentMethod === "financiamento"
+        ? entryValue + totalFinanced
+        : totalPrice;
 
     const optionalsSanitized = (
-      (configuration.optionals as unknown as string[]).filter(
-        (opt) => opt in (OPTIONAL_PRICES as Record<string, number>)
-      ) as unknown as typeof configuration.optionals
-    );
+      configuration.optionals as unknown as string[]
+    ).filter(
+      (opt) => opt in (OPTIONAL_PRICES as Record<string, number>),
+    ) as unknown as typeof configuration.optionals;
 
     const configurationForOrder = {
       ...configuration,
@@ -203,10 +249,10 @@ const Order = () => {
       totalPrice: finalPrice,
       customer: {
         name: formData.name,
-        surname: formData.surname,
+        surname: formData.lastname,
         email: formData.email,
         phone: formData.phone,
-        cpf: formData.cpf,
+        cpf: formData.document,
         store: formData.store,
       },
       paymentMethod,
@@ -215,22 +261,22 @@ const Order = () => {
 
     if (error || !order) {
       toast({
-        title: 'Erro ao criar pedido',
-        description: error || 'Tente novamente mais tarde.',
-        variant: 'destructive',
+        title: "Erro ao criar pedido",
+        description: error || "Tente novamente mais tarde.",
+        variant: "destructive",
       });
       setIsSubmitting(false);
       return;
     }
 
     // Add installment value for display
-    if (paymentMethod === 'financiamento') {
+    if (paymentMethod === "financiamento") {
       order.installmentValue = installmentValue;
     }
     order.customer.store = formData.store;
 
     resetConfiguration();
-    navigate('/success', { state: { order } });
+    navigate("/success", { state: { order } });
   };
 
   return (
@@ -240,12 +286,14 @@ const Order = () => {
         <div className="container max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => navigate('/configure')}
+              onClick={() => navigate("/configure")}
               className="p-2 rounded-lg hover:bg-secondary transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <h1 className="font-display text-xl font-semibold">Finalizar Pedido</h1>
+            <h1 className="font-display text-xl font-semibold">
+              Finalizar Pedido
+            </h1>
           </div>
           <Link to="/">
             <img src={logo} alt="Velô" className="h-7" />
@@ -257,10 +305,12 @@ const Order = () => {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Form */}
           <div className="lg:col-span-2">
-            <form onSubmit={handleSubmit} className="space-y-8">
+            <form noValidate onSubmit={handleSubmit} className="space-y-8">
               {/* Personal Info */}
               <section className="bg-card rounded-lg p-6 shadow-elegant">
-                <h2 className="font-display text-lg font-semibold mb-6">Dados Pessoais</h2>
+                <h2 className="font-display text-lg font-semibold mb-6">
+                  Dados Pessoais
+                </h2>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Nome</Label>
@@ -268,21 +318,35 @@ const Order = () => {
                       id="name"
                       data-testid="checkout-name"
                       value={formData.name}
-                      onChange={(e) => handleChange('name', e.target.value)}
-                      className={cn(errors.name && 'border-destructive')}
+                      onChange={(e) => handleChange("name", e.target.value)}
+                      className={cn(errors.name && "border-destructive")}
                     />
-                    {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
+                    {errors.name && (
+                      <p
+                        data-testid="error-name"
+                        className="text-sm text-destructive"
+                      >
+                        {errors.name}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="surname">Sobrenome</Label>
+                    <Label htmlFor="lastname">Sobrenome</Label>
                     <Input
-                      id="surname"
-                      data-testid="checkout-surname"
-                      value={formData.surname}
-                      onChange={(e) => handleChange('surname', e.target.value)}
-                      className={cn(errors.surname && 'border-destructive')}
+                      id="lastname"
+                      data-testid="checkout-lastname"
+                      value={formData.lastname}
+                      onChange={(e) => handleChange("lastname", e.target.value)}
+                      className={cn(errors.lastname && "border-destructive")}
                     />
-                    {errors.surname && <p className="text-sm text-destructive">{errors.surname}</p>}
+                    {errors.lastname && (
+                      <p
+                        data-testid="error-lastname"
+                        className="text-sm text-destructive"
+                      >
+                        {errors.lastname}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
@@ -291,57 +355,84 @@ const Order = () => {
                       type="email"
                       data-testid="checkout-email"
                       value={formData.email}
-                      onChange={(e) => handleChange('email', e.target.value)}
-                      className={cn(errors.email && 'border-destructive')}
+                      onChange={(e) => handleChange("email", e.target.value)}
+                      className={cn(errors.email && "border-destructive")}
                     />
-                    {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+                    {errors.email && (
+                      <p
+                        data-testid="error-email"
+                        className="text-sm text-destructive"
+                      >
+                        {errors.email}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Telefone</Label>
                     <InputMask
                       mask="(99) 99999-9999"
                       value={formData.phone}
-                      onChange={(e) => handleChange('phone', e.target.value)}
+                      onChange={(e) => handleChange("phone", e.target.value)}
                     >
-                      {(inputProps: React.InputHTMLAttributes<HTMLInputElement>) => (
+                      {(
+                        inputProps: React.InputHTMLAttributes<HTMLInputElement>,
+                      ) => (
                         <Input
                           {...inputProps}
                           id="phone"
                           data-testid="checkout-phone"
-                          className={cn(errors.phone && 'border-destructive')}
+                          className={cn(errors.phone && "border-destructive")}
                         />
                       )}
                     </InputMask>
-                    {errors.phone && <p className="text-sm text-destructive">{errors.phone}</p>}
+                    {errors.phone && (
+                      <p
+                        data-testid="error-phone"
+                        className="text-sm text-destructive"
+                      >
+                        {errors.phone}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="cpf">CPF</Label>
+                    <Label htmlFor="document">CPF</Label>
                     <InputMask
                       mask="999.999.999-99"
-                      value={formData.cpf}
-                      onChange={(e) => handleChange('cpf', e.target.value)}
+                      value={formData.document}
+                      onChange={(e) => handleChange("document", e.target.value)}
                     >
-                      {(inputProps: React.InputHTMLAttributes<HTMLInputElement>) => (
+                      {(
+                        inputProps: React.InputHTMLAttributes<HTMLInputElement>,
+                      ) => (
                         <Input
                           {...inputProps}
-                          id="cpf"
-                          data-testid="checkout-cpf"
-                          className={cn(errors.cpf && 'border-destructive')}
+                          id="document"
+                          data-testid="checkout-document"
+                          className={cn(
+                            errors.document && "border-destructive",
+                          )}
                         />
                       )}
                     </InputMask>
-                    {errors.cpf && <p className="text-sm text-destructive">{errors.cpf}</p>}
+                    {errors.document && (
+                      <p
+                        data-testid="error-document"
+                        className="text-sm text-destructive"
+                      >
+                        {errors.document}
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="store">Loja para Retirada</Label>
                     <Select
                       value={formData.store}
-                      onValueChange={(value) => handleChange('store', value)}
+                      onValueChange={(value) => handleChange("store", value)}
                     >
                       <SelectTrigger
                         id="store"
                         data-testid="checkout-store"
-                        className={cn(errors.store && 'border-destructive')}
+                        className={cn(errors.store && "border-destructive")}
                       >
                         <SelectValue placeholder="Selecione uma loja" />
                       </SelectTrigger>
@@ -353,24 +444,33 @@ const Order = () => {
                         ))}
                       </SelectContent>
                     </Select>
-                    {errors.store && <p className="text-sm text-destructive">{errors.store}</p>}
+                    {errors.store && (
+                      <p
+                        data-testid="error-store"
+                        className="text-sm text-destructive"
+                      >
+                        {errors.store}
+                      </p>
+                    )}
                   </div>
                 </div>
               </section>
 
               {/* Payment Method */}
               <section className="bg-card rounded-lg p-6 shadow-elegant">
-                <h2 className="font-display text-lg font-semibold mb-6">Forma de Pagamento</h2>
+                <h2 className="font-display text-lg font-semibold mb-6">
+                  Forma de Pagamento
+                </h2>
                 <div className="flex gap-4">
                   <button
                     type="button"
                     data-testid="payment-avista"
-                    onClick={() => setPaymentMethod('avista')}
+                    onClick={() => setPaymentMethod("avista")}
                     className={cn(
-                      'flex-1 p-4 rounded-lg border-2 transition-all duration-200 text-center',
-                      paymentMethod === 'avista'
-                        ? 'border-primary bg-secondary'
-                        : 'border-border hover:border-muted-foreground'
+                      "flex-1 p-4 rounded-lg border-2 transition-all duration-200 text-center",
+                      paymentMethod === "avista"
+                        ? "border-primary bg-secondary"
+                        : "border-border hover:border-muted-foreground",
                     )}
                   >
                     <p className="font-medium">À Vista</p>
@@ -381,12 +481,12 @@ const Order = () => {
                   <button
                     type="button"
                     data-testid="payment-financiamento"
-                    onClick={() => setPaymentMethod('financiamento')}
+                    onClick={() => setPaymentMethod("financiamento")}
                     className={cn(
-                      'flex-1 p-4 rounded-lg border-2 transition-all duration-200 text-center',
-                      paymentMethod === 'financiamento'
-                        ? 'border-primary bg-secondary'
-                        : 'border-border hover:border-muted-foreground'
+                      "flex-1 p-4 rounded-lg border-2 transition-all duration-200 text-center",
+                      paymentMethod === "financiamento"
+                        ? "border-primary bg-secondary"
+                        : "border-border hover:border-muted-foreground",
                     )}
                   >
                     <p className="font-medium">Financiamento</p>
@@ -396,7 +496,7 @@ const Order = () => {
                   </button>
                 </div>
 
-                {paymentMethod === 'financiamento' && (
+                {paymentMethod === "financiamento" && (
                   <div className="mt-4 space-y-4 animate-fade-in">
                     <div className="space-y-2">
                       <Label htmlFor="entry-value">Valor da Entrada</Label>
@@ -406,8 +506,10 @@ const Order = () => {
                         data-testid="input-entry-value"
                         min={0}
                         max={totalPrice}
-                        value={entryValue || ''}
-                        onChange={(e) => setEntryValue(Number(e.target.value) || 0)}
+                        value={entryValue || ""}
+                        onChange={(e) =>
+                          setEntryValue(Number(e.target.value) || 0)
+                        }
                         placeholder="R$ 0,00"
                         className="font-mono"
                       />
@@ -417,23 +519,32 @@ const Order = () => {
                     </div>
                     <div className="p-4 bg-secondary rounded-lg">
                       <p className="text-sm text-muted-foreground">
-                        Valor a financiar:{' '}
-                        <span className="font-medium">{formatPrice(amountToFinance)}</span>
+                        Valor a financiar:{" "}
+                        <span className="font-medium">
+                          {formatPrice(amountToFinance)}
+                        </span>
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        Parcela (12x):{' '}
-                        <span className="font-medium">{formatPrice(installmentValue)}</span>
+                        Parcela (12x):{" "}
+                        <span className="font-medium">
+                          {formatPrice(installmentValue)}
+                        </span>
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        Taxa de juros: <span className="font-medium">2% a.m.</span>
+                        Taxa de juros:{" "}
+                        <span className="font-medium">2% a.m.</span>
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        Total financiado:{' '}
-                        <span className="font-medium">{formatPrice(totalFinanced)}</span>
+                        Total financiado:{" "}
+                        <span className="font-medium">
+                          {formatPrice(totalFinanced)}
+                        </span>
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        Juros totais:{' '}
-                        <span className="font-medium">{formatPrice(totalFinanced - amountToFinance)}</span>
+                        Juros totais:{" "}
+                        <span className="font-medium">
+                          {formatPrice(totalFinanced - amountToFinance)}
+                        </span>
                       </p>
                     </div>
                   </div>
@@ -447,21 +558,36 @@ const Order = () => {
                     id="terms"
                     data-testid="checkout-terms"
                     checked={formData.terms}
-                    onCheckedChange={(checked) => handleChange('terms', checked as boolean)}
-                    className={cn(errors.terms && 'border-destructive')}
+                    onCheckedChange={(checked) =>
+                      handleChange("terms", checked as boolean)
+                    }
+                    className={cn(errors.terms && "border-destructive")}
                   />
                   <div>
                     <Label htmlFor="terms" className="cursor-pointer">
-                      Li e aceito os{' '}
-                      <Link to="/termos" className="text-accent hover:underline">
+                      Li e aceito os{" "}
+                      <Link
+                        to="/termos"
+                        className="text-accent hover:underline"
+                      >
                         Termos de Uso
-                      </Link>{' '}
-                      e{' '}
-                      <Link to="/privacidade" className="text-accent hover:underline">
+                      </Link>{" "}
+                      e{" "}
+                      <Link
+                        to="/privacidade"
+                        className="text-accent hover:underline"
+                      >
                         Política de Privacidade
                       </Link>
                     </Label>
-                    {errors.terms && <p className="text-sm text-destructive mt-1">{errors.terms}</p>}
+                    {errors.terms && (
+                      <p
+                        data-testid="error-terms"
+                        className="text-sm text-destructive mt-1"
+                      >
+                        {errors.terms}
+                      </p>
+                    )}
                   </div>
                 </div>
               </section>
@@ -478,7 +604,7 @@ const Order = () => {
                     Processando...
                   </>
                 ) : (
-                  'Confirmar Pedido'
+                  "Confirmar Pedido"
                 )}
               </Button>
             </form>
@@ -487,35 +613,56 @@ const Order = () => {
           {/* Summary */}
           <div className="lg:col-span-1">
             <div className="bg-card rounded-lg p-6 shadow-elegant sticky top-8">
-              <h2 className="font-display text-lg font-semibold mb-4">Resumo</h2>
+              <h2 className="font-display text-lg font-semibold mb-4">
+                Resumo
+              </h2>
               <div className="aspect-video bg-stage rounded-lg overflow-hidden mb-4 flex items-center justify-center">
                 <img
-                  src={exteriorImages[configuration.exteriorColor][configuration.wheelType]}
+                  src={
+                    exteriorImages[configuration.exteriorColor][
+                      configuration.wheelType
+                    ]
+                  }
                   alt="Velô Sprint"
                   className="w-full h-full object-contain"
                 />
               </div>
-              <h3 className="font-display font-semibold text-lg">Velô Sprint</h3>
+              <h3 className="font-display font-semibold text-lg">
+                Velô Sprint
+              </h3>
               <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
                 <li className="flex justify-between">
                   <span>Cor</span>
-                  <span className="text-foreground">{colorLabels[configuration.exteriorColor]}</span>
+                  <span className="text-foreground">
+                    {colorLabels[configuration.exteriorColor]}
+                  </span>
                 </li>
                 <li className="flex justify-between">
                   <span>Interior</span>
-                  <span className="text-foreground capitalize">{configuration.interiorColor.replace('-', ' ')}</span>
+                  <span className="text-foreground capitalize">
+                    {configuration.interiorColor.replace("-", " ")}
+                  </span>
                 </li>
                 <li className="flex justify-between">
                   <span>Rodas</span>
-                  <span className="text-foreground capitalize">{configuration.wheelType} Wheels</span>
+                  <span className="text-foreground capitalize">
+                    {configuration.wheelType} Wheels
+                  </span>
                 </li>
                 {(configuration.optionals as unknown as string[])
-                  .filter((opt) => opt in (OPTIONAL_PRICES as Record<string, number>))
+                  .filter(
+                    (opt) => opt in (OPTIONAL_PRICES as Record<string, number>),
+                  )
                   .map((opt) => (
                     <li key={opt} className="flex justify-between">
-                      <span>{(OPTIONAL_LABELS as Record<string, string>)[opt]}</span>
+                      <span>
+                        {(OPTIONAL_LABELS as Record<string, string>)[opt]}
+                      </span>
                       <span className="text-foreground">
-                        + {formatPrice((OPTIONAL_PRICES as Record<string, number>)[opt])}
+                        +{" "}
+                        {formatPrice(
+                          (OPTIONAL_PRICES as Record<string, number>)[opt],
+                        )}
                       </span>
                     </li>
                   ))}
@@ -527,7 +674,11 @@ const Order = () => {
                     data-testid="summary-total-price"
                     className="text-2xl font-display font-semibold"
                   >
-                    {formatPrice(paymentMethod === 'financiamento' ? totalFinanced : totalPrice)}
+                    {formatPrice(
+                      paymentMethod === "financiamento"
+                        ? totalFinanced
+                        : totalPrice,
+                    )}
                   </span>
                 </div>
               </div>
