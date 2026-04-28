@@ -28,6 +28,7 @@ export function createOrderLookupActions(page: Page) {
       await expect(title).toContainText("Velô Sprint");
 
       await page.getByRole("link", { name: "Consultar Pedido" }).click();
+      await page.waitForLoadState("networkidle");
       await expect(page.getByRole("heading")).toContainText("Consultar Pedido");
     },
 

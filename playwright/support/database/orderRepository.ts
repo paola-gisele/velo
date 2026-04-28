@@ -32,7 +32,6 @@ export async function insertOrder(order: OrderDetails) {
     updated_at: new Date().toISOString(),
     optionals: [],
   };
-  // If the record exists it might throw a duplicate error, but we manage teardown.
   await db.insertInto("orders").values(data).execute();
 }
 

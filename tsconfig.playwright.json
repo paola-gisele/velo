@@ -3,10 +3,12 @@
     "target": "ESNext",
     "module": "ESNext",
     "strict": true,
+    "allowSyntheticDefaultImports": true,
     "moduleResolution": "node",
     "types": ["node", "@playwright/test"],
-    "esModuleInterop": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true
   },
   "include": ["playwright.config.ts", "playwright/**/*.ts"]
 }

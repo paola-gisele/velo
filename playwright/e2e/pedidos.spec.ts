@@ -6,7 +6,7 @@ import {
   deleteOrderByNumber,
 } from "../support/database/orderRepository";
 
-import testData from "../support/fixtures/orders.json" with { type: "json" };
+import testData from "../support/fixtures/orders";
 
 test.describe("Consulta de Pedido", () => {
   test.beforeEach(async ({ app }) => {
