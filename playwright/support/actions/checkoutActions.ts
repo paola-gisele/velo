@@ -52,6 +52,26 @@ export function createCheckoutActions(page: Page) {
       await terms.check();
     },
 
+    async selectPaymentMethod(method: "avista" | "financiamento") {
+      const paymentButton = page.getByTestId(`payment-${method}`);
+      await expect(paymentButton).toBeVisible();
+      await paymentButton.click();
+      await expect(paymentButton).toHaveClass(/border-primary/);
+    },
+
+    async expectPaymentMethodSelected(method: "avista" | "financiamento") {
+      const paymentButton = page.getByTestId(`payment-${method}`);
+      await expect(paymentButton).toHaveClass(/border-primary/);
+    },
+
+    async expectPaymentMethodPrice(
+      method: "avista" | "financiamento",
+      price: string,
+    ) {
+      const paymentButton = page.getByTestId(`payment-${method}`);
+      await expect(paymentButton).toContainText(price);
+    },
+
     async submit() {
       await page.getByRole("button", { name: "Confirmar Pedido" }).click();
     },

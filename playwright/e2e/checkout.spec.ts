@@ -1,27 +1,25 @@
 import { test, expect } from "../support/fixtures";
+import ordersData from "../support/fixtures/orders";
+import { deleteOrderByNumber } from "../support/database/orderRepository";
 
 test.describe("Checkout", () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto("/order");
-    await expect(
-      page.getByRole("heading", { name: "Finalizar Pedido" }),
-    ).toBeVisible();
-  });
-
   test.describe("Validações de campos obrigatórios", () => {
     let alerts: any;
 
-    test.beforeEach(async ({ app }) => {
+    test.beforeEach(async ({ app, page }) => {
+      await page.goto("/order");
+      await expect(
+        page.getByRole("heading", { name: "Finalizar Pedido" }),
+      ).toBeVisible();
+
       alerts = app.checkout.elements.alerts;
     });
 
     test("deve validar obrigatoriedade de todos os campos em branco", async ({
       app,
     }) => {
-      // Act
       await app.checkout.submit();
 
-      // Assert
       await expect(alerts.name).toHaveText(
         "Nome deve ter pelo menos 2 caracteres",
       );
@@ -46,15 +44,12 @@ test.describe("Checkout", () => {
         phone: "(11) 99999-9999",
       };
 
-      // Arrange
       await app.checkout.fillCustomerlData(customer);
       await app.checkout.selectStore("Velô Paulista");
       await app.checkout.acceptTerms();
 
-      // Act
       await app.checkout.submit();
 
-      // Assert
       await expect(alerts.name).toHaveText(
         "Nome deve ter pelo menos 2 caracteres",
       );
@@ -74,15 +69,12 @@ test.describe("Checkout", () => {
         phone: "(11) 99999-9999",
       };
 
-      // Arrange
       await app.checkout.fillCustomerlData(customer);
       await app.checkout.selectStore("Velô Paulista");
       await app.checkout.acceptTerms();
 
-      // Act
       await app.checkout.submit();
 
-      // Assert
       await expect(alerts.email).toHaveText("Email inválido");
     });
 
@@ -95,15 +87,12 @@ test.describe("Checkout", () => {
         phone: "(11) 99999-9999",
       };
 
-      // Arrange
       await app.checkout.fillCustomerlData(customer);
       await app.checkout.selectStore("Velô Paulista");
       await app.checkout.acceptTerms();
 
-      // Act
       await app.checkout.submit();
 
-      // Assert
       await expect(alerts.document).toHaveText("CPF inválido");
     });
 
@@ -118,17 +107,76 @@ test.describe("Checkout", () => {
         phone: "(11) 99999-9999",
       };
 
-      // Arrange
       await app.checkout.fillCustomerlData(customer);
       await app.checkout.selectStore("Velô Paulista");
 
       await expect(app.checkout.elements.terms).not.toBeChecked();
 
-      // Act
       await app.checkout.submit();
 
-      // Assert
       await expect(alerts.terms).toHaveText("Aceite os termos");
+    });
+  });
+
+  test.describe("Pagamento e Confirmação", () => {
+    test("deve criar pedido com sucesso usando pagamento à vista - Fluxo E2E completo", async ({
+      page,
+      app,
+    }) => {
+      const customer = {
+        name: "Fernando",
+        lastname: "Papito",
+        email: ordersData.aprovado.customer.email,
+        phone: ordersData.aprovado.customer.phone,
+        document: ordersData.aprovado.customer.document,
+        store: "Velô Paulista",
+        paymentMethod: "avista" as const,
+        totalPrice: "R$ 40.000,00",
+      };
+
+      let createdOrderNumber: string | null = null;
+
+      try {
+        await page.goto("/");
+        await page.waitForLoadState("networkidle");
+        await page.getByRole("link", { name: "Configure Agora" }).click();
+
+        await app.configurator.expectPrice(customer.totalPrice);
+        await app.configurator.finishConfigurator();
+        await app.checkout.expectLoaded();
+
+        await expect(page).toHaveURL("/order");
+
+        await app.checkout.fillCustomerlData(customer);
+        await app.checkout.selectStore(customer.store);
+        await app.checkout.selectPaymentMethod("avista");
+        await app.checkout.expectSummaryTotal(customer.totalPrice);
+        await app.checkout.expectPaymentMethodPrice(
+          customer.paymentMethod,
+          customer.totalPrice,
+        );
+
+        await app.checkout.acceptTerms();
+        await expect(app.checkout.elements.terms).toBeChecked();
+
+        await app.checkout.submit();
+
+        await expect(
+          page.getByRole("button", { name: "Processando..." }),
+        ).toBeVisible();
+
+        await expect(page).toHaveURL("/success");
+        await expect(page.getByText("Pedido Aprovado!")).toBeVisible();
+
+        const orderNumberPattern = /VLO-[A-Z0-9]{6}/;
+        const orderElement = page.getByText(orderNumberPattern);
+        await expect(orderElement).toBeVisible();
+        createdOrderNumber = await orderElement.textContent();
+      } finally {
+        if (createdOrderNumber) {
+          await deleteOrderByNumber(createdOrderNumber);
+        }
+      }
     });
   });
 });
