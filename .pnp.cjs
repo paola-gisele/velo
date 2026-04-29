@@ -95,7 +95,7 @@ const RAW_RUNTIME_STATE =
           ["react-router-dom", "virtual:287e42b9a3b3f0486662d60a139e425e889ef422082dcf99659296a0afc83409478b8927fdf5ce6456226131aacfa373941bbf32e10ca2e49b4b8bf6446ee28d#npm:6.30.3"],\
           ["recharts", "virtual:287e42b9a3b3f0486662d60a139e425e889ef422082dcf99659296a0afc83409478b8927fdf5ce6456226131aacfa373941bbf32e10ca2e49b4b8bf6446ee28d#npm:2.15.4"],\
           ["sonner", "virtual:287e42b9a3b3f0486662d60a139e425e889ef422082dcf99659296a0afc83409478b8927fdf5ce6456226131aacfa373941bbf32e10ca2e49b4b8bf6446ee28d#npm:1.7.4"],\
-          ["supabase", "npm:2.95.5"],\
+          ["supabase", "npm:2.95.6"],\
           ["tailwind-merge", "npm:2.6.1"],\
           ["tailwindcss", "npm:3.4.19"],\
           ["tailwindcss-animate", "virtual:287e42b9a3b3f0486662d60a139e425e889ef422082dcf99659296a0afc83409478b8927fdf5ce6456226131aacfa373941bbf32e10ca2e49b4b8bf6446ee28d#npm:1.0.7"],\
@@ -6187,13 +6187,13 @@ const RAW_RUNTIME_STATE =
       }]\
     ]],\
     ["supabase", [\
-      ["npm:2.95.5", {\
-        "packageLocation": "../../../.yarn/berry/cache/supabase-npm-2.95.5-21d9851e24-10c0.zip/node_modules/supabase/",\
+      ["npm:2.95.6", {\
+        "packageLocation": "../../../.yarn/berry/cache/supabase-npm-2.95.6-7c1b2c18ce-10c0.zip/node_modules/supabase/",\
         "packageDependencies": [\
           ["bin-links", "npm:6.0.0"],\
           ["https-proxy-agent", "npm:9.0.0"],\
           ["node-fetch", "npm:3.3.2"],\
-          ["supabase", "npm:2.95.5"],\
+          ["supabase", "npm:2.95.6"],\
           ["tar", "npm:7.5.13"]\
         ],\
         "linkType": "HARD"\
@@ -6661,7 +6661,7 @@ const RAW_RUNTIME_STATE =
           ["react-router-dom", "virtual:287e42b9a3b3f0486662d60a139e425e889ef422082dcf99659296a0afc83409478b8927fdf5ce6456226131aacfa373941bbf32e10ca2e49b4b8bf6446ee28d#npm:6.30.3"],\
           ["recharts", "virtual:287e42b9a3b3f0486662d60a139e425e889ef422082dcf99659296a0afc83409478b8927fdf5ce6456226131aacfa373941bbf32e10ca2e49b4b8bf6446ee28d#npm:2.15.4"],\
           ["sonner", "virtual:287e42b9a3b3f0486662d60a139e425e889ef422082dcf99659296a0afc83409478b8927fdf5ce6456226131aacfa373941bbf32e10ca2e49b4b8bf6446ee28d#npm:1.7.4"],\
-          ["supabase", "npm:2.95.5"],\
+          ["supabase", "npm:2.95.6"],\
           ["tailwind-merge", "npm:2.6.1"],\
           ["tailwindcss", "npm:3.4.19"],\
           ["tailwindcss-animate", "virtual:287e42b9a3b3f0486662d60a139e425e889ef422082dcf99659296a0afc83409478b8927fdf5ce6456226131aacfa373941bbf32e10ca2e49b4b8bf6446ee28d#npm:1.0.7"],\

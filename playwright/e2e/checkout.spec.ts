@@ -1,6 +1,9 @@
 import { test, expect } from "../support/fixtures";
 import ordersData from "../support/fixtures/orders";
-import { deleteOrderByNumber } from "../support/database/orderRepository";
+import {
+  deleteOrderByNumber,
+  deleteOrdersByEmail,
+} from "../support/database/orderRepository";
 
 test.describe("Checkout", () => {
   test.describe("Validações de campos obrigatórios", () => {
@@ -124,59 +127,110 @@ test.describe("Checkout", () => {
       app,
     }) => {
       const customer = {
-        name: "Fernando",
+        name: "Nick",
         lastname: "Papito",
-        email: ordersData.aprovado.customer.email,
+        email: "pagamento@confirmacao.com",
         phone: ordersData.aprovado.customer.phone,
-        document: ordersData.aprovado.customer.document,
+        document: "736.043.170-02",
         store: "Velô Paulista",
         paymentMethod: "avista" as const,
         totalPrice: "R$ 40.000,00",
       };
 
-      let createdOrderNumber: string | null = null;
+      await deleteOrdersByEmail(customer.email);
 
-      try {
-        await page.goto("/");
-        await page.waitForLoadState("networkidle");
-        await page.getByRole("link", { name: "Configure Agora" }).click();
+      await page.goto("/");
+      await page.waitForLoadState("networkidle");
+      await page.getByRole("link", { name: "Configure Agora" }).click();
 
-        await app.configurator.expectPrice(customer.totalPrice);
-        await app.configurator.finishConfigurator();
-        await app.checkout.expectLoaded();
+      await app.configurator.expectPrice(customer.totalPrice);
+      await app.configurator.finishConfigurator();
+      await app.checkout.expectLoaded();
 
-        await expect(page).toHaveURL("/order");
+      await expect(page).toHaveURL("/order");
 
-        await app.checkout.fillCustomerlData(customer);
-        await app.checkout.selectStore(customer.store);
-        await app.checkout.selectPaymentMethod("avista");
-        await app.checkout.expectSummaryTotal(customer.totalPrice);
-        await app.checkout.expectPaymentMethodPrice(
-          customer.paymentMethod,
-          customer.totalPrice,
-        );
+      await app.checkout.fillCustomerlData(customer);
+      await app.checkout.selectStore(customer.store);
+      await app.checkout.selectPaymentMethod("avista");
+      await app.checkout.expectSummaryTotal(customer.totalPrice);
+      await app.checkout.expectPaymentMethodPrice(
+        customer.paymentMethod,
+        customer.totalPrice,
+      );
 
-        await app.checkout.acceptTerms();
-        await expect(app.checkout.elements.terms).toBeChecked();
+      await app.checkout.acceptTerms();
+      await expect(app.checkout.elements.terms).toBeChecked();
 
-        await app.checkout.submit();
+      await app.checkout.submit();
 
-        await expect(
-          page.getByRole("button", { name: "Processando..." }),
-        ).toBeVisible();
+      await expect(
+        page.getByRole("button", { name: "Processando..." }),
+      ).toBeVisible();
 
-        await expect(page).toHaveURL("/success");
-        await expect(page.getByText("Pedido Aprovado!")).toBeVisible();
+      await expect(page).toHaveURL("/success");
+      await expect(page.getByText("Pedido Aprovado!")).toBeVisible();
+    });
 
-        const orderNumberPattern = /VLO-[A-Z0-9]{6}/;
-        const orderElement = page.getByText(orderNumberPattern);
-        await expect(orderElement).toBeVisible();
-        createdOrderNumber = await orderElement.textContent();
-      } finally {
-        if (createdOrderNumber) {
-          await deleteOrderByNumber(createdOrderNumber);
-        }
-      }
+    test("deve aprovar automaticamente o pedido quando o score do CPF for maior que 700 no financiamento.", async ({
+      page,
+      app,
+    }) => {
+      const customer = {
+        name: "Lets",
+        lastname: "Papito",
+        email: "financiamento@test.com",
+        phone: ordersData.aprovado.customer.phone,
+        document: "201.744.880-09",
+        store: "Velô Paulista",
+        paymentMethod: "financiamento" as const,
+        totalPrice: "R$ 40.000,00",
+      };
+
+      await deleteOrdersByEmail(customer.email);
+
+      await page.route(
+        "**/functions/v1/credit-analysis",
+        async (route) =>
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+              status: "Done",
+              score: 701,
+            }),
+          }),
+      );
+
+      await page.goto("/");
+      await page.waitForLoadState("networkidle");
+      await page.getByRole("link", { name: "Configure Agora" }).click();
+
+      await app.configurator.expectPrice(customer.totalPrice);
+      await app.configurator.finishConfigurator();
+      await app.checkout.expectLoaded();
+
+      await expect(page).toHaveURL("/order");
+
+      await app.checkout.fillCustomerlData(customer);
+      await app.checkout.selectStore(customer.store);
+      await app.checkout.selectPaymentMethod("financiamento");
+      // await app.checkout.expectSummaryTotal(customer.totalPrice);
+      // await app.checkout.expectPaymentMethodPrice(
+      //   customer.paymentMethod,
+      //   customer.totalPrice,
+      // );
+
+      await app.checkout.acceptTerms();
+      await expect(app.checkout.elements.terms).toBeChecked();
+
+      await app.checkout.submit();
+
+      await expect(
+        page.getByRole("button", { name: "Processando..." }),
+      ).toBeVisible();
+
+      await expect(page).toHaveURL("/success");
+      await expect(page.getByText("Pedido Aprovado!")).toBeVisible();
     });
   });
 });

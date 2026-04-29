@@ -4725,9 +4725,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"supabase@npm:^2.95.2":
-  version: 2.95.5
-  resolution: "supabase@npm:2.95.5"
+"supabase@npm:^2.95.6":
+  version: 2.95.6
+  resolution: "supabase@npm:2.95.6"
   dependencies:
     bin-links: "npm:^6.0.0"
     https-proxy-agent: "npm:^9.0.0"
@@ -4735,7 +4735,7 @@ __metadata:
     tar: "npm:7.5.13"
   bin:
     supabase: bin/supabase
-  checksum: 10c0/96f4621e45b2a26a65b6da1f1bee7189a3979f189405cf415d25218e4bd1ce9a3cc0381d212f3e9d0e93f11c9f062367a927fe0043c7338b81df62081ddfe02e
+  checksum: 10c0/f1fac094415d1203eb07cd991d0cf0449cbe6f96aee8a6e9554c2e2519610e044668a2acecd69108bd2597b13ecaf2da9f5d9a95fab7d51455fd8bc14b0544ab
   languageName: node
   linkType: hard
 
@@ -5095,7 +5095,7 @@ __metadata:
     react-router-dom: "npm:^6.30.1"
     recharts: "npm:^2.15.4"
     sonner: "npm:^1.7.4"
-    supabase: "npm:^2.95.2"
+    supabase: "npm:^2.95.6"
     tailwind-merge: "npm:^2.6.0"
     tailwindcss: "npm:^3.4.17"
     tailwindcss-animate: "npm:^1.0.7"
