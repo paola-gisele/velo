@@ -80,5 +80,28 @@ export function createCheckoutActions(page: Page) {
     async submit() {
       await page.getByRole("button", { name: "Confirmar Pedido" }).click();
     },
+
+    async simulateCreditAnalysisResponse(score: number) {
+      await page.route(
+        "**/functions/v1/credit-analysis",
+        async (route) =>
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+              status: "Done",
+              score: score,
+            }),
+          }),
+      );
+    },
+
+    async expectOrderProcessingAndStatus(statusMessage: string) {
+      await expect(
+        page.getByRole("button", { name: "Processando..." }),
+      ).toBeVisible();
+      await expect(page).toHaveURL("/success");
+      await expect(page.getByText(statusMessage)).toBeVisible();
+    },
   };
 }

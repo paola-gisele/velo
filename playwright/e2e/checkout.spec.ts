@@ -135,19 +135,22 @@ test.describe("Checkout", () => {
 
       await deleteOrdersByEmail(customer.email);
 
-      await page.goto("/");
-      await page.waitForLoadState("networkidle");
-      await page.getByRole("link", { name: "Configure Agora" }).click();
-
+      await app.common.navigateToConfigurator();
       await app.configurator.expectPrice(customer.totalPrice);
       await app.configurator.finishConfigurator();
       await app.checkout.expectLoaded();
 
       await expect(page).toHaveURL("/order");
 
-      await app.checkout.fillCustomerlData(customer);
+      await app.checkout.fillCustomerlData({
+        name: customer.name,
+        lastname: customer.lastname,
+        email: customer.email,
+        phone: customer.phone,
+        document: customer.document,
+      });
       await app.checkout.selectStore(customer.store);
-      await app.checkout.selectPaymentMethod("avista");
+      await app.checkout.selectPaymentMethod(customer.paymentMethod);
       await app.checkout.expectSummaryTotal(customer.totalPrice);
       await app.checkout.expectPaymentMethodPrice(
         customer.paymentMethod,
@@ -159,12 +162,7 @@ test.describe("Checkout", () => {
 
       await app.checkout.submit();
 
-      await expect(
-        page.getByRole("button", { name: "Processando..." }),
-      ).toBeVisible();
-
-      await expect(page).toHaveURL("/success");
-      await expect(page.getByText("Pedido Aprovado!")).toBeVisible();
+      await app.checkout.expectOrderProcessingAndStatus("Pedido Aprovado!");
     });
 
     test("FINANCIADO - deve APROVAR automaticamente o pedido quando o score do CPF for maior que 700 no financiamento.", async ({
@@ -184,30 +182,22 @@ test.describe("Checkout", () => {
 
       await deleteOrdersByEmail(customer.email);
 
-      await page.route(
-        "**/functions/v1/credit-analysis",
-        async (route) =>
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({
-              status: "Done",
-              score: 701,
-            }),
-          }),
-      );
+      await app.checkout.simulateCreditAnalysisResponse(701);
 
-      await page.goto("/");
-      await page.waitForLoadState("networkidle");
-      await page.getByRole("link", { name: "Configure Agora" }).click();
-
+      await app.common.navigateToConfigurator();
       await app.configurator.expectPrice(customer.totalPrice);
       await app.configurator.finishConfigurator();
       await app.checkout.expectLoaded();
 
       await expect(page).toHaveURL("/order");
 
-      await app.checkout.fillCustomerlData(customer);
+      await app.checkout.fillCustomerlData({
+        name: customer.name,
+        lastname: customer.lastname,
+        email: customer.email,
+        phone: customer.phone,
+        document: customer.document,
+      });
       await app.checkout.selectStore(customer.store);
       await app.checkout.selectPaymentMethod(customer.paymentMethod);
       await app.checkout.acceptTerms();
@@ -215,12 +205,7 @@ test.describe("Checkout", () => {
 
       await app.checkout.submit();
 
-      await expect(
-        page.getByRole("button", { name: "Processando..." }),
-      ).toBeVisible();
-
-      await expect(page).toHaveURL("/success");
-      await expect(page.getByText("Pedido Aprovado!")).toBeVisible();
+      await app.checkout.expectOrderProcessingAndStatus("Pedido Aprovado!");
     });
 
     test("FINANCIADO - deve deixar o pedido EM ANÁLISE quando o score do CPF for entre 501 e 700 no financiamento", async ({
@@ -240,30 +225,22 @@ test.describe("Checkout", () => {
 
       await deleteOrdersByEmail(customer.email);
 
-      await page.route(
-        "**/functions/v1/credit-analysis",
-        async (route) =>
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({
-              status: "Done",
-              score: 650,
-            }),
-          }),
-      );
+      await app.checkout.simulateCreditAnalysisResponse(650);
 
-      await page.goto("/");
-      await page.waitForLoadState("networkidle");
-      await page.getByRole("link", { name: "Configure Agora" }).click();
-
+      await app.common.navigateToConfigurator();
       await app.configurator.expectPrice(customer.totalPrice);
       await app.configurator.finishConfigurator();
       await app.checkout.expectLoaded();
 
       await expect(page).toHaveURL("/order");
 
-      await app.checkout.fillCustomerlData(customer);
+      await app.checkout.fillCustomerlData({
+        name: customer.name,
+        lastname: customer.lastname,
+        email: customer.email,
+        phone: customer.phone,
+        document: customer.document,
+      });
       await app.checkout.selectStore(customer.store);
       await app.checkout.selectPaymentMethod(customer.paymentMethod);
 
@@ -272,13 +249,7 @@ test.describe("Checkout", () => {
 
       await app.checkout.submit();
 
-      await expect(
-        page.getByRole("button", { name: "Processando..." }),
-      ).toBeVisible();
-
-      await expect(page).toHaveURL("/success");
-
-      await expect(page.getByText("Pedido em Análise")).toBeVisible();
+      await app.checkout.expectOrderProcessingAndStatus("Pedido em Análise");
     });
 
     test("FINANCIADO - deve REPROVAR quando o score do CPF é menor igual 500 sem entrada no financiamento", async ({
@@ -298,24 +269,13 @@ test.describe("Checkout", () => {
 
       await deleteOrdersByEmail(customer.email);
 
-      await page.route(
-        "**/functions/v1/credit-analysis",
-        async (route) =>
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({ status: "Done", score: 450 }),
-          }),
-      );
+      await app.checkout.simulateCreditAnalysisResponse(450);
 
-      await page.goto("/");
-      await page.waitForLoadState("networkidle");
-      await page.getByRole("link", { name: "Configure Agora" }).click();
+      await app.common.navigateToConfigurator();
 
       await app.configurator.expectPrice(customer.totalPrice);
       await app.configurator.finishConfigurator();
       await app.checkout.expectLoaded();
-
       await expect(page).toHaveURL("/order");
       await app.checkout.fillCustomerlData({
         name: customer.name,
@@ -356,22 +316,9 @@ test.describe("Checkout", () => {
 
       await deleteOrdersByEmail(customer.email);
 
-      await page.route(
-        "**/functions/v1/credit-analysis",
-        async (route) =>
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({
-              status: "Done",
-              score: 450,
-            }),
-          }),
-      );
+      await app.checkout.simulateCreditAnalysisResponse(450);
 
-      await page.goto("/");
-      await page.waitForLoadState("networkidle");
-      await page.getByRole("link", { name: "Configure Agora" }).click();
+      await app.common.navigateToConfigurator();
 
       await app.configurator.expectPrice(customer.totalPrice);
       await app.configurator.finishConfigurator();
@@ -397,12 +344,7 @@ test.describe("Checkout", () => {
 
       await app.checkout.submit();
 
-      await expect(
-        page.getByRole("button", { name: "Processando..." }),
-      ).toBeVisible();
-
-      await expect(page).toHaveURL("/success");
-      await expect(page.getByText("Crédito Reprovado")).toBeVisible();
+      await app.checkout.expectOrderProcessingAndStatus("Crédito Reprovado");
     });
 
     test("FINANCIADO - deve APROVAR quando o score do CPF é menor igual 500 com entrada igual 50% no financiamento", async ({
@@ -423,22 +365,9 @@ test.describe("Checkout", () => {
 
       await deleteOrdersByEmail(customer.email);
 
-      await page.route(
-        "**/functions/v1/credit-analysis",
-        async (route) =>
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({
-              status: "Done",
-              score: 450,
-            }),
-          }),
-      );
+      await app.checkout.simulateCreditAnalysisResponse(450);
 
-      await page.goto("/");
-      await page.waitForLoadState("networkidle");
-      await page.getByRole("link", { name: "Configure Agora" }).click();
+      await app.common.navigateToConfigurator();
 
       await app.configurator.expectPrice(customer.totalPrice);
       await app.configurator.finishConfigurator();
@@ -464,12 +393,7 @@ test.describe("Checkout", () => {
 
       await app.checkout.submit();
 
-      await expect(
-        page.getByRole("button", { name: "Processando..." }),
-      ).toBeVisible();
-
-      await expect(page).toHaveURL("/success");
-      await expect(page.getByText("Pedido Aprovado!")).toBeVisible();
+      await app.checkout.expectOrderProcessingAndStatus("Pedido Aprovado!");
     });
 
     test("FINANCIADO - deve APROVAR quando o score do CPF é menor igual 500 com entrada maior 50% no financiamento", async ({
@@ -490,22 +414,9 @@ test.describe("Checkout", () => {
 
       await deleteOrdersByEmail(customer.email);
 
-      await page.route(
-        "**/functions/v1/credit-analysis",
-        async (route) =>
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({
-              status: "Done",
-              score: 450,
-            }),
-          }),
-      );
+      await app.checkout.simulateCreditAnalysisResponse(450);
 
-      await page.goto("/");
-      await page.waitForLoadState("networkidle");
-      await page.getByRole("link", { name: "Configure Agora" }).click();
+      await app.common.navigateToConfigurator();
 
       await app.configurator.expectPrice(customer.totalPrice);
       await app.configurator.finishConfigurator();
@@ -531,12 +442,7 @@ test.describe("Checkout", () => {
 
       await app.checkout.submit();
 
-      await expect(
-        page.getByRole("button", { name: "Processando..." }),
-      ).toBeVisible();
-
-      await expect(page).toHaveURL("/success");
-      await expect(page.getByText("Pedido Aprovado!")).toBeVisible();
+      await app.checkout.expectOrderProcessingAndStatus("Pedido Aprovado!");
     });
   });
 });

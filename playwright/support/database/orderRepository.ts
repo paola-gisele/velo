@@ -9,10 +9,10 @@ export function normalizeValue(value: string) {
   if (!value) return "";
 
   return value
-    .normalize("NFD") // separa acentos
-    .replace(/[\u0300-\u036f]/g, "") // remove acentos
-    .replace(/\s+/g, "") // remove espaços
-    .toLowerCase(); // lowercase
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, "")
+    .toLowerCase();
 }
 
 export async function insertOrder(order: OrderDetails) {
