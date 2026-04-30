@@ -1,5 +1,4 @@
 import { test, expect } from "../support/fixtures";
-import ordersData from "../support/fixtures/orders";
 import { deleteOrdersByEmail } from "../support/database/orderRepository";
 
 test.describe("Checkout", () => {
@@ -62,8 +61,8 @@ test.describe("Checkout", () => {
       app,
     }) => {
       const customer = {
-        name: "Fernando",
-        lastname: "Papito",
+        name: "Email",
+        lastname: "Invalido",
         email: "papito@.com",
         document: "00000014141",
         phone: "(11) 99999-9999",
@@ -80,8 +79,8 @@ test.describe("Checkout", () => {
 
     test("deve exibir erro para CPF inválido", async ({ app }) => {
       const customer = {
-        name: "Fernando",
-        lastname: "Papito",
+        name: "CPF",
+        lastname: "Invalido",
         email: "papito@test.com",
         document: "00000014199",
         phone: "(11) 99999-9999",
@@ -100,8 +99,8 @@ test.describe("Checkout", () => {
       app,
     }) => {
       const customer = {
-        name: "Fernando",
-        lastname: "Papito",
+        name: "Termos",
+        lastname: "NaoAceitos",
         email: "papito@test.com",
         document: "00000014199",
         phone: "(11) 99999-9999",
@@ -119,15 +118,15 @@ test.describe("Checkout", () => {
   });
 
   test.describe("Pagamento e Confirmação", () => {
-    test("deve criar pedido com sucesso usando pagamento à vista - Fluxo E2E completo", async ({
+    test("A VISTA - deve criar pedido com sucesso usando pagamento à vista", async ({
       page,
       app,
     }) => {
       const customer = {
         name: "Nick",
-        lastname: "Papito",
+        lastname: "Avista",
         email: "pagamento@confirmacao.com",
-        phone: ordersData.aprovado.customer.phone,
+        phone: "(11) 99999-9999",
         document: "736.043.170-02",
         store: "Velô Paulista",
         paymentMethod: "avista" as const,
@@ -168,15 +167,15 @@ test.describe("Checkout", () => {
       await expect(page.getByText("Pedido Aprovado!")).toBeVisible();
     });
 
-    test("deve aprovar automaticamente o pedido quando o score do CPF for maior que 700 no financiamento.", async ({
+    test("FINANCIADO - deve APROVAR automaticamente o pedido quando o score do CPF for maior que 700 no financiamento.", async ({
       page,
       app,
     }) => {
       const customer = {
-        name: "Lets",
-        lastname: "Papito",
+        name: "Score",
+        lastname: "Alto",
         email: "financiamento@test.com",
-        phone: ordersData.aprovado.customer.phone,
+        phone: "(11) 99999-9999",
         document: "201.744.880-09",
         store: "Velô Paulista",
         paymentMethod: "financiamento" as const,
@@ -210,7 +209,7 @@ test.describe("Checkout", () => {
 
       await app.checkout.fillCustomerlData(customer);
       await app.checkout.selectStore(customer.store);
-      await app.checkout.selectPaymentMethod("financiamento");
+      await app.checkout.selectPaymentMethod(customer.paymentMethod);
       await app.checkout.acceptTerms();
       await expect(app.checkout.elements.terms).toBeChecked();
 
@@ -224,7 +223,7 @@ test.describe("Checkout", () => {
       await expect(page.getByText("Pedido Aprovado!")).toBeVisible();
     });
 
-    test("deve deixar o pedido EM ANÁLISE quando o score do CPF for entre 501 e 700 no financiamento", async ({
+    test("FINANCIADO - deve deixar o pedido EM ANÁLISE quando o score do CPF for entre 501 e 700 no financiamento", async ({
       page,
       app,
     }) => {
@@ -232,7 +231,7 @@ test.describe("Checkout", () => {
         name: "Score",
         lastname: "Medio",
         email: "emanalise@test.com",
-        phone: ordersData.aprovado.customer.phone,
+        phone: "(11) 99999-9999",
         document: "201.744.880-09",
         store: "Velô Paulista",
         paymentMethod: "financiamento" as const,
@@ -266,7 +265,7 @@ test.describe("Checkout", () => {
 
       await app.checkout.fillCustomerlData(customer);
       await app.checkout.selectStore(customer.store);
-      await app.checkout.selectPaymentMethod("financiamento");
+      await app.checkout.selectPaymentMethod(customer.paymentMethod);
 
       await app.checkout.acceptTerms();
       await expect(app.checkout.elements.terms).toBeChecked();
@@ -282,129 +281,262 @@ test.describe("Checkout", () => {
       await expect(page.getByText("Pedido em Análise")).toBeVisible();
     });
 
-    test.describe("Financiamento com Score Baixo (<= 500)", () => {
-      test("CT08-01: Score <= 500 sem entrada deve reprovar crédito", async ({
-        page,
-        app,
-      }) => {
-        const customer = {
-          name: "CT08-01",
-          lastname: "SemEntrada",
-          email: "ct08sementrada@example.com",
-          phone: "(11) 99999-9999",
-          document: "000.000.141-41",
-          store: "Velô Paulista",
-          paymentMethod: "financiamento" as const,
-          totalPrice: "R$ 40.000,00",
-        };
+    test("FINANCIADO - deve REPROVAR quando o score do CPF é menor igual 500 sem entrada no financiamento", async ({
+      page,
+      app,
+    }) => {
+      const customer = {
+        name: "Score",
+        lastname: "BaixoSemEntrada",
+        email: "ct08sementrada@example.com",
+        phone: "(11) 99999-9999",
+        document: "000.000.141-41",
+        store: "Velô Paulista",
+        paymentMethod: "financiamento" as const,
+        totalPrice: "R$ 40.000,00",
+      };
 
-        await deleteOrdersByEmail(customer.email);
+      await deleteOrdersByEmail(customer.email);
 
-        await page.route(
-          "**/functions/v1/credit-analysis",
-          async (route) =>
-            await route.fulfill({
-              status: 200,
-              contentType: "application/json",
-              body: JSON.stringify({ status: "Done", score: 450 }),
-            }),
-        );
+      await page.route(
+        "**/functions/v1/credit-analysis",
+        async (route) =>
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({ status: "Done", score: 450 }),
+          }),
+      );
 
-        await page.goto("/");
-        await page.waitForLoadState("networkidle");
-        await page.getByRole("link", { name: "Configure Agora" }).click();
+      await page.goto("/");
+      await page.waitForLoadState("networkidle");
+      await page.getByRole("link", { name: "Configure Agora" }).click();
 
-        await app.configurator.expectPrice(customer.totalPrice);
-        await app.configurator.finishConfigurator();
-        await app.checkout.expectLoaded();
+      await app.configurator.expectPrice(customer.totalPrice);
+      await app.configurator.finishConfigurator();
+      await app.checkout.expectLoaded();
 
-        await expect(page).toHaveURL("/order");
-        await app.checkout.fillCustomerlData({
-          name: customer.name,
-          lastname: customer.lastname,
-          email: customer.email,
-          phone: customer.phone,
-          document: customer.document,
-        });
-        await app.checkout.selectStore(customer.store);
-        await app.checkout.selectPaymentMethod("financiamento");
-        await app.checkout.acceptTerms();
-        await expect(app.checkout.elements.terms).toBeChecked();
-
-        await app.checkout.submit();
-        await expect(
-          page.getByRole("button", { name: "Processando..." }),
-        ).toBeVisible();
-        await expect(page).toHaveURL("/success");
-
-        await expect(page.getByText("Crédito Reprovado")).toBeVisible();
+      await expect(page).toHaveURL("/order");
+      await app.checkout.fillCustomerlData({
+        name: customer.name,
+        lastname: customer.lastname,
+        email: customer.email,
+        phone: customer.phone,
+        document: customer.document,
       });
+      await app.checkout.selectStore(customer.store);
+      await app.checkout.selectPaymentMethod(customer.paymentMethod);
+      await app.checkout.acceptTerms();
+      await expect(app.checkout.elements.terms).toBeChecked();
 
-      test("CT08-02: Score <= 500 com entrada < 50% deve reprovar crédito", async ({
-        page,
-        app,
-      }) => {
-        const customer = {
-          name: "CT08-02",
-          lastname: "EntradaBaixa",
-          email: "ct08-entrybaixa@example.com",
-          phone: "(11) 99999-9999",
-          document: "000.000.14141",
-          store: "Velô Paulista",
-          paymentMethod: "financiamento" as const,
-          totalPrice: "R$ 40.000,00",
-        };
+      await app.checkout.submit();
+      await expect(
+        page.getByRole("button", { name: "Processando..." }),
+      ).toBeVisible();
+      await expect(page).toHaveURL("/success");
 
-        await deleteOrdersByEmail(customer.email);
+      await expect(page.getByText("Crédito Reprovado")).toBeVisible();
+    });
 
-        await page.route(
-          "**/functions/v1/credit-analysis",
-          async (route) =>
-            await route.fulfill({
-              status: 200,
-              contentType: "application/json",
-              body: JSON.stringify({
-                status: "Done",
-                score: 450,
-              }),
+    test("FINANCIADO - deve REPROVAR quando o score do CPF é menor igual 500 com entrada menor 50% no financiamento", async ({
+      page,
+      app,
+    }) => {
+      const customer = {
+        name: "Score",
+        lastname: "BaixoEntradaMenor",
+        email: "ct08-entrybaixa@example.com",
+        phone: "(11) 99999-9999",
+        document: "000.000.14141",
+        store: "Velô Paulista",
+        paymentMethod: "financiamento" as const,
+        totalPrice: "R$ 40.000,00",
+        entryValue: 8000,
+      };
+
+      await deleteOrdersByEmail(customer.email);
+
+      await page.route(
+        "**/functions/v1/credit-analysis",
+        async (route) =>
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+              status: "Done",
+              score: 450,
             }),
-        );
+          }),
+      );
 
-        await page.goto("/");
-        await page.waitForLoadState("networkidle");
-        await page.getByRole("link", { name: "Configure Agora" }).click();
+      await page.goto("/");
+      await page.waitForLoadState("networkidle");
+      await page.getByRole("link", { name: "Configure Agora" }).click();
 
-        await app.configurator.expectPrice(customer.totalPrice);
-        await app.configurator.finishConfigurator();
-        await app.checkout.expectLoaded();
+      await app.configurator.expectPrice(customer.totalPrice);
+      await app.configurator.finishConfigurator();
+      await app.checkout.expectLoaded();
 
-        await expect(page).toHaveURL("/order");
+      await expect(page).toHaveURL("/order");
 
-        await app.checkout.fillCustomerlData({
-          name: customer.name,
-          lastname: customer.lastname,
-          email: customer.email,
-          phone: customer.phone,
-          document: customer.document,
-        });
-        await app.checkout.selectStore(customer.store);
-
-        await app.checkout.selectPaymentMethod("financiamento");
-
-        await app.checkout.setEntryValue(8000);
-
-        await app.checkout.acceptTerms();
-        await expect(app.checkout.elements.terms).toBeChecked();
-
-        await app.checkout.submit();
-
-        await expect(
-          page.getByRole("button", { name: "Processando..." }),
-        ).toBeVisible();
-
-        await expect(page).toHaveURL("/success");
-        await expect(page.getByText("Crédito Reprovado")).toBeVisible();
+      await app.checkout.fillCustomerlData({
+        name: customer.name,
+        lastname: customer.lastname,
+        email: customer.email,
+        phone: customer.phone,
+        document: customer.document,
       });
+      await app.checkout.selectStore(customer.store);
+
+      await app.checkout.selectPaymentMethod(customer.paymentMethod);
+
+      await app.checkout.setEntryValue(customer.entryValue);
+
+      await app.checkout.acceptTerms();
+      await expect(app.checkout.elements.terms).toBeChecked();
+
+      await app.checkout.submit();
+
+      await expect(
+        page.getByRole("button", { name: "Processando..." }),
+      ).toBeVisible();
+
+      await expect(page).toHaveURL("/success");
+      await expect(page.getByText("Crédito Reprovado")).toBeVisible();
+    });
+
+    test("FINANCIADO - deve APROVAR quando o score do CPF é menor igual 500 com entrada igual 50% no financiamento", async ({
+      page,
+      app,
+    }) => {
+      const customer = {
+        name: "Score",
+        lastname: "BaixoEntradaIgual",
+        email: "ct08-entryigual@example.com",
+        phone: "(11) 99999-9999",
+        document: "850.008.000-01",
+        store: "Velô Paulista",
+        paymentMethod: "financiamento" as const,
+        totalPrice: "R$ 40.000,00",
+        entryValue: 20000,
+      };
+
+      await deleteOrdersByEmail(customer.email);
+
+      await page.route(
+        "**/functions/v1/credit-analysis",
+        async (route) =>
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+              status: "Done",
+              score: 450,
+            }),
+          }),
+      );
+
+      await page.goto("/");
+      await page.waitForLoadState("networkidle");
+      await page.getByRole("link", { name: "Configure Agora" }).click();
+
+      await app.configurator.expectPrice(customer.totalPrice);
+      await app.configurator.finishConfigurator();
+      await app.checkout.expectLoaded();
+
+      await expect(page).toHaveURL("/order");
+
+      await app.checkout.fillCustomerlData({
+        name: customer.name,
+        lastname: customer.lastname,
+        email: customer.email,
+        phone: customer.phone,
+        document: customer.document,
+      });
+      await app.checkout.selectStore(customer.store);
+
+      await app.checkout.selectPaymentMethod(customer.paymentMethod);
+
+      await app.checkout.setEntryValue(customer.entryValue);
+
+      await app.checkout.acceptTerms();
+      await expect(app.checkout.elements.terms).toBeChecked();
+
+      await app.checkout.submit();
+
+      await expect(
+        page.getByRole("button", { name: "Processando..." }),
+      ).toBeVisible();
+
+      await expect(page).toHaveURL("/success");
+      await expect(page.getByText("Pedido Aprovado!")).toBeVisible();
+    });
+
+    test("FINANCIADO - deve APROVAR quando o score do CPF é menor igual 500 com entrada maior 50% no financiamento", async ({
+      page,
+      app,
+    }) => {
+      const customer = {
+        name: "Score",
+        lastname: "BaixoEntradaMaior",
+        email: "ct08-entrymaior@example.com",
+        phone: "(11) 99999-9999",
+        document: "850.008.000-01",
+        store: "Velô Paulista",
+        paymentMethod: "financiamento" as const,
+        totalPrice: "R$ 40.000,00",
+        entryValue: 25000,
+      };
+
+      await deleteOrdersByEmail(customer.email);
+
+      await page.route(
+        "**/functions/v1/credit-analysis",
+        async (route) =>
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+              status: "Done",
+              score: 450,
+            }),
+          }),
+      );
+
+      await page.goto("/");
+      await page.waitForLoadState("networkidle");
+      await page.getByRole("link", { name: "Configure Agora" }).click();
+
+      await app.configurator.expectPrice(customer.totalPrice);
+      await app.configurator.finishConfigurator();
+      await app.checkout.expectLoaded();
+
+      await expect(page).toHaveURL("/order");
+
+      await app.checkout.fillCustomerlData({
+        name: customer.name,
+        lastname: customer.lastname,
+        email: customer.email,
+        phone: customer.phone,
+        document: customer.document,
+      });
+      await app.checkout.selectStore(customer.store);
+
+      await app.checkout.selectPaymentMethod(customer.paymentMethod);
+
+      await app.checkout.setEntryValue(customer.entryValue);
+
+      await app.checkout.acceptTerms();
+      await expect(app.checkout.elements.terms).toBeChecked();
+
+      await app.checkout.submit();
+
+      await expect(
+        page.getByRole("button", { name: "Processando..." }),
+      ).toBeVisible();
+
+      await expect(page).toHaveURL("/success");
+      await expect(page.getByText("Pedido Aprovado!")).toBeVisible();
     });
   });
 });
