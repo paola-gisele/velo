@@ -52,6 +52,11 @@ export function createCheckoutActions(page: Page) {
       await terms.check();
     },
 
+    async setEntryValue(value: number) {
+      const inputEntry = page.getByTestId("input-entry-value");
+      await inputEntry.fill(String(value));
+    },
+
     async selectPaymentMethod(method: "avista" | "financiamento") {
       const paymentButton = page.getByTestId(`payment-${method}`);
       await expect(paymentButton).toBeVisible();
