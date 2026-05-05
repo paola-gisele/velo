@@ -66,7 +66,7 @@ const Success = () => {
     statusColor = "text-amber-500";
     statusBg = "bg-amber-100/10";
   } else if (isRejected) {
-    statusTitle = "Crédito Reprovado";
+    statusTitle = "Pedido Reprovado";
     statusMessage =
       "Infelizmente seu crédito não foi aprovado. Tente novamente com pagamento à vista.";
     statusIcon = <XCircle className="w-12 h-12 text-destructive" />;

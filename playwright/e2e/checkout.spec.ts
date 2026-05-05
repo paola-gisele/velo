@@ -118,6 +118,10 @@ test.describe("Checkout", () => {
   });
 
   test.describe("Pagamento e Confirmação", () => {
+    test.beforeEach(async ({ app }) => {
+      await app.common.navigateToConfigurator();
+    });
+
     test("A VISTA - deve criar pedido com sucesso usando pagamento à vista", async ({
       page,
       app,
@@ -135,7 +139,6 @@ test.describe("Checkout", () => {
 
       await deleteOrdersByEmail(customer.email);
 
-      await app.common.navigateToConfigurator();
       await app.configurator.expectPrice(customer.totalPrice);
       await app.configurator.finishConfigurator();
       await app.checkout.expectLoaded();
@@ -182,9 +185,8 @@ test.describe("Checkout", () => {
 
       await deleteOrdersByEmail(customer.email);
 
-      await app.checkout.simulateCreditAnalysisResponse(701);
+      await app.mock.creditAnalysis(710);
 
-      await app.common.navigateToConfigurator();
       await app.configurator.expectPrice(customer.totalPrice);
       await app.configurator.finishConfigurator();
       await app.checkout.expectLoaded();
@@ -225,9 +227,8 @@ test.describe("Checkout", () => {
 
       await deleteOrdersByEmail(customer.email);
 
-      await app.checkout.simulateCreditAnalysisResponse(650);
+      await app.mock.creditAnalysis(650);
 
-      await app.common.navigateToConfigurator();
       await app.configurator.expectPrice(customer.totalPrice);
       await app.configurator.finishConfigurator();
       await app.checkout.expectLoaded();
@@ -269,9 +270,7 @@ test.describe("Checkout", () => {
 
       await deleteOrdersByEmail(customer.email);
 
-      await app.checkout.simulateCreditAnalysisResponse(450);
-
-      await app.common.navigateToConfigurator();
+      await app.mock.creditAnalysis(450);
 
       await app.configurator.expectPrice(customer.totalPrice);
       await app.configurator.finishConfigurator();
@@ -295,7 +294,7 @@ test.describe("Checkout", () => {
       ).toBeVisible();
       await expect(page).toHaveURL("/success");
 
-      await expect(page.getByText("Crédito Reprovado")).toBeVisible();
+      await expect(page.getByText("Pedido Reprovado")).toBeVisible();
     });
 
     test("FINANCIADO - deve REPROVAR quando o score do CPF é menor igual 500 com entrada menor 50% no financiamento", async ({
@@ -316,9 +315,7 @@ test.describe("Checkout", () => {
 
       await deleteOrdersByEmail(customer.email);
 
-      await app.checkout.simulateCreditAnalysisResponse(450);
-
-      await app.common.navigateToConfigurator();
+      await app.mock.creditAnalysis(450);
 
       await app.configurator.expectPrice(customer.totalPrice);
       await app.configurator.finishConfigurator();
@@ -344,7 +341,7 @@ test.describe("Checkout", () => {
 
       await app.checkout.submit();
 
-      await app.checkout.expectOrderProcessingAndStatus("Crédito Reprovado");
+      await app.checkout.expectOrderProcessingAndStatus("Pedido Reprovado");
     });
 
     test("FINANCIADO - deve APROVAR quando o score do CPF é menor igual 500 com entrada igual 50% no financiamento", async ({
@@ -365,9 +362,7 @@ test.describe("Checkout", () => {
 
       await deleteOrdersByEmail(customer.email);
 
-      await app.checkout.simulateCreditAnalysisResponse(450);
-
-      await app.common.navigateToConfigurator();
+      await app.mock.creditAnalysis(450);
 
       await app.configurator.expectPrice(customer.totalPrice);
       await app.configurator.finishConfigurator();
@@ -414,9 +409,7 @@ test.describe("Checkout", () => {
 
       await deleteOrdersByEmail(customer.email);
 
-      await app.checkout.simulateCreditAnalysisResponse(450);
-
-      await app.common.navigateToConfigurator();
+      await app.mock.creditAnalysis(450);
 
       await app.configurator.expectPrice(customer.totalPrice);
       await app.configurator.finishConfigurator();
