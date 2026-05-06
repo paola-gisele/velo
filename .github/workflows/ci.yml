@@ -1,0 +1,44 @@
+# Workflow de Integração Contínua focado EXCLUSIVAMENTE em testes unitários.
+# - Usa Node.js 24, Yarn (via Corepack) e Vitest.
+# - Executa "yarn test" (script: "vitest run").
+# - Estruturado para facilitar expansão futura (ex.: novos jobs), mantendo apenas 1 job conforme restrições.
+
+name: Continuous Integration
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  NODE_VERSION: '24' # Versão do Node.js definida como variável global para fácil manutenção
+
+jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # Permissões mínimas necessárias para checkout
+
+    steps:
+      # Passo 1: Obter o código do repositório
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+
+      # Passo 2: Preparar ambiente Node.js utilizando a versão global definida
+      - name: Setup Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # Passo 3: Habilitar Corepack para usar Yarn gerenciado pela versão do Node
+      - name: Enable Corepack (Yarn)
+        run: corepack enable
+
+      # Passo 4: Instalar dependências conforme yarn.lock
+      - name: Install dependencies
+        run: yarn install
+
+      # Passo 5: Executar testes unitários com Vitest
+      - name: Run unit tests
+        run: yarn test
