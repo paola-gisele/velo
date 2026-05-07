@@ -11,7 +11,9 @@ on:
       - main
 
 env:
-  NODE_VERSION: '24' # Versão do Node.js definida como variável global para fácil manutenção
+  NODE_VERSION: "24" # Versão do Node.js definida como variável global para fácil manutenção
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }} # Token do Vercel armazenado como segredo para segurança
+  VERCEL_SCOPE: paola-giseles-projects
 
 jobs:
   unit-tests:
@@ -42,3 +44,35 @@ jobs:
       # Passo 5: Executar testes unitários com Vitest
       - name: Run unit tests
         run: yarn test
+
+  build-and-deploy:
+    name: Build and Deploy Vercel Preview
+    needs: unit-tests
+    runs-on: ubuntu-latest
+
+    steps:
+      # Passo 1: Obter o código do repositório
+      - name: Checkout repository
+        uses: actions/checkout@v6.0.2
+
+      # Passo 2: Preparar ambiente Node.js utilizando a versão global definida
+      - name: Setup Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # Passo 3: Habilitar Corepack para usar Yarn gerenciado pela versão do Node
+      - name: Enable Corepack (Yarn)
+        run: corepack enable
+
+      # Passo 4: Instalar dependências conforme yarn.lock
+      - name: Install dependencies
+        run: yarn install
+
+      # Passo 5: Build para o Vercel
+      - name: Build for Vercel
+        run: yarn vercel build --token=$VERCEL_TOKEN
+
+      # Passo 6: Deploy preview no vercel
+      - name: Deploy to preview
+        run: yarn vercel deploy --prebuilt --target=preview --token=$VERCEL_TOKEN --scope=$VERCEL_SCOPE
