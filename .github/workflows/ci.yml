@@ -15,7 +15,7 @@ env:
   VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }} # Token do Vercel armazenado como segredo para segurança
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }} # ID do projeto Vercel para deploy
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }} # ID da organização Vercel para deploy
-  VERCEL_SCOPE: paola-giseles-projects # Escopo do Vercel para deploy (geralmente o nome da equipe ou usuário)
+  VERCEL_SCOPE: paola-giseles-projects # Escopo do Vercel para deploy
 
 jobs:
   unit-tests:
@@ -120,7 +120,7 @@ jobs:
       - name: Run E2E Regression Tests
         run: yarn playwright test playwright/e2e/online.spec.ts
         env:
-          BASE_URL: ${{ needs.build-and-deploy.outputs.deployment-url }} # Passa a URL do preview do Vercel para os testes E2E via variável de ambiente
+          BASE_URL: ${{ needs.build-and-deploy.outputs.preview-url }} # Passa a URL do preview do Vercel para os testes E2E via variável de ambiente
 
       # Passo 7: Relatório de Testes Automatizados
       - name: Generate Test Report
