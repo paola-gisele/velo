@@ -118,7 +118,7 @@ jobs:
 
       # Passo 6: Executar testes E2E com Playwright, utilizando a URL do preview do Vercel
       - name: Run E2E Regression Tests
-        run: yarn playwright test playwright/e2e/online.spec.ts
+        run: yarn playwright test
         env:
           BASE_URL: ${{ needs.build-and-deploy.outputs.preview-url }} # Passa a URL do preview do Vercel para os testes E2E via variável de ambiente
 
