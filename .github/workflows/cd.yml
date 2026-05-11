@@ -139,7 +139,7 @@ jobs:
           path: playwright-report/ # Caminho onde o Playwright gera os relatórios de teste, ajustável conforme configuração do Playwright
 
   Promote:
-    nome: Promote to Production
+    name: Promote to Production
     needs: e2e-testes
     runs-on: ubuntu-latest
 
