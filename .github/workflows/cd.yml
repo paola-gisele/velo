@@ -138,6 +138,12 @@ jobs:
           name: playwright-test-report
           path: playwright-report/ # Caminho onde o Playwright gera os relatórios de teste, ajustável conforme configuração do Playwright
 
+      # Passo 8: Publicar report Json do TestDino
+      - name: Publish TestDino Report
+        if: ${{ !cancelled() }} # Publica o relatório apenas se os testes não forem cancelados
+        run: |
+          npx tdpw upload ./playwright-report --token=${{ secrets.TDINO_TOKEN }}
+
   Promote:
     name: Promote to Production
     needs: [build-and-deploy, e2e-testes]
