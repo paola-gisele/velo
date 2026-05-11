@@ -3,7 +3,7 @@
 # - Executa "yarn test" (script: "vitest run").
 # - Estruturado para facilitar expansão futura (ex.: novos jobs), mantendo apenas 1 job conforme restrições.
 
-name: Continuous Integration
+name: Continuous Deployment
 
 on:
   push:
@@ -75,7 +75,11 @@ jobs:
 
       # Passo 5: Obter as configurações do vercel
       - name: Pull Vercel Config
-        run: yarn vercel pull --yes --environment=preview --token=$VERCEL_TOKEN --scope=$VERCEL_SCOPE
+        run: |
+        yarn vercel pull --yes \
+        --environment=preview \
+        --token=$VERCEL_TOKEN \
+        --scope=$VERCEL_SCOPE
 
       # Passo 6: Build para o Vercel
       - name: Build for Vercel
@@ -85,7 +89,10 @@ jobs:
       - name: Deploy to preview
         id: deploy
         run: |
-          URL=$(yarn vercel deploy --prebuilt --target=preview --token=$VERCEL_TOKEN --scope=$VERCEL_SCOPE)
+          URL=$(yarn vercel deploy --prebuilt \
+          --target=preview \
+          --token=$VERCEL_TOKEN \
+          --scope=$VERCEL_SCOPE)
           echo "deployment-url=$URL" >> $GITHUB_OUTPUT
 
   e2e-testes:
@@ -130,3 +137,17 @@ jobs:
         with:
           name: playwright-test-report
           path: playwright-report/ # Caminho onde o Playwright gera os relatórios de teste, ajustável conforme configuração do Playwright
+
+    
+  Promote:
+    nome: Promote to Production
+    needs: e2e-testes
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Vercel promote
+        run: |
+        yarn vercel promote ${{ needs.build-and-deploy.outputs.preview-url }} \
+        --token=$VERCEL_TOKEN \
+        --scope=$VERCEL_SCOPE \
+        --yes
