@@ -142,7 +142,7 @@ jobs:
       - name: Publish TestDino Report
         if: ${{ !cancelled() }} # Publica o relatório apenas se os testes não forem cancelados
         run: |
-          npx tdpw upload ./playwright-report --token=${{ secrets.TDINO_TOKEN }}
+          npx tdpw upload ./playwright-report --token=${{ secrets.TD_TOKEN }}
 
   Promote:
     name: Promote to Production
