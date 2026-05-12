@@ -128,7 +128,7 @@ jobs:
         run: yarn playwright test playwright
         env:
           BASE_URL: ${{ needs.build-and-deploy.outputs.preview-url }} # Passa a URL do preview do Vercel para os testes E2E via variável de ambiente
-          DATABASE_URL: ${{ secrets.DATABASE_URL }} # Passa a URL do banco de dados para os testes E2E via variável de ambiente
+          DATABASE_URL: ${{ secrets.DATABASE_URL_PREVIEW }} # Passa a URL do banco de dados para os testes E2E via variável de ambiente
 
       # Passo 7: Relatório de Testes Automatizados
       - name: Generate Test Report
