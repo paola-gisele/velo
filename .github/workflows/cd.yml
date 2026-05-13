@@ -73,19 +73,7 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
-      # # Passo 5: Obter as configurações do vercel
-      # - name: Pull Vercel Config
-      #   run: |
-      #     yarn vercel pull --yes \
-      #     --environment=preview \
-      #     --token=$VERCEL_TOKEN \
-      #     --scope=$VERCEL_SCOPE
-
-      # # Passo 6: Build para o Vercel
-      # - name: Build for Vercel
-      #   run: yarn vercel build --token=$VERCEL_TOKEN
-
-      # Passo 7: Deploy preview no vercel
+      # Passo 5: Deploy preview no vercel
       - name: Deploy to preview
         id: deploy
         run: |
