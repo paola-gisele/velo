@@ -161,17 +161,12 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
-      #   - name: Pull Vercel Production Config
-      #     run: |
-      #       yarn vercel pull --yes \
-      #       --environment=production \
-      #       --token=$VERCEL_TOKEN \
-      #       --scope=$VERCEL_SCOPE
-
-      - name: Deploy for Production
-        run: yarn vercel build --prod --token=$VERCEL_TOKEN
-      - name: Deploy to Production
+      - name: Pull Vercel Production Config
         run: |
-          yarn vercel --prod \
+          yarn vercel pull --yes \
+          --environment=production \
           --token=$VERCEL_TOKEN \
           --scope=$VERCEL_SCOPE
+
+      - name: Deploy for Production
+        run: yarn vercel --prod --token=$VERCEL_TOKEN --scope=$VERCEL_SCOPE
