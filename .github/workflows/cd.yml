@@ -48,50 +48,48 @@ jobs:
         run: yarn test
 
   build-and-deploy:
-    name: Build and Deploy Vercel Preview
+    name: Deploy Vercel Preview
     needs: unit-tests
     runs-on: ubuntu-latest
     outputs:
       preview-url: ${{ steps.deploy.outputs.deployment-url }} # Captura a URL do preview do Vercel para uso posterior
 
     steps:
-      # Passo 1: Obter o código do repositório
-      - name: Checkout repository
-        uses: actions/checkout@v6.0.2
+      # # Passo 1: Obter o código do repositório
+      # - name: Checkout repository
+      #   uses: actions/checkout@v6.0.2
 
-      # Passo 2: Preparar ambiente Node.js utilizando a versão global definida
-      - name: Setup Node.js
-        uses: actions/setup-node@v6.4.0
-        with:
-          node-version: ${{ env.NODE_VERSION }}
+      # # Passo 2: Preparar ambiente Node.js utilizando a versão global definida
+      # - name: Setup Node.js
+      #   uses: actions/setup-node@v6.4.0
+      #   with:
+      #     node-version: ${{ env.NODE_VERSION }}
 
-      # Passo 3: Habilitar Corepack para usar Yarn gerenciado pela versão do Node
-      - name: Enable Corepack (Yarn)
-        run: corepack enable
+      # # Passo 3: Habilitar Corepack para usar Yarn gerenciado pela versão do Node
+      # - name: Enable Corepack (Yarn)
+      #   run: corepack enable
 
-      # Passo 4: Instalar dependências conforme yarn.lock
-      - name: Install dependencies
-        run: yarn install
+      # # Passo 4: Instalar dependências conforme yarn.lock
+      # - name: Install dependencies
+      #   run: yarn install
 
-      # Passo 5: Obter as configurações do vercel
-      - name: Pull Vercel Config
-        run: |
-          yarn vercel pull --yes \
-          --environment=preview \
-          --token=$VERCEL_TOKEN \
-          --scope=$VERCEL_SCOPE
+      # # Passo 5: Obter as configurações do vercel
+      # - name: Pull Vercel Config
+      #   run: |
+      #     yarn vercel pull --yes \
+      #     --environment=preview \
+      #     --token=$VERCEL_TOKEN \
+      #     --scope=$VERCEL_SCOPE
 
-      # Passo 6: Build para o Vercel
-      - name: Build for Vercel
-        run: yarn vercel build --token=$VERCEL_TOKEN
+      # # Passo 6: Build para o Vercel
+      # - name: Build for Vercel
+      #   run: yarn vercel build --token=$VERCEL_TOKEN
 
       # Passo 7: Deploy preview no vercel
       - name: Deploy to preview
         id: deploy
         run: |
-          URL=$(yarn vercel deploy --prebuilt \
-          --target=preview \
-          --token=$VERCEL_TOKEN \
+          URL=$(yarn vercel --token=$VERCEL_TOKEN \
           --scope=$VERCEL_SCOPE)
           echo "deployment-url=$URL" >> $GITHUB_OUTPUT
 
@@ -148,29 +146,32 @@ jobs:
     name: Build and Deploy to Production
     needs: [build-and-deploy, e2e-testes]
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6.0.2
+    # steps:
+    #   - name: Checkout repository
+    #     uses: actions/checkout@v6.0.2
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6.4.0
-        with:
-          node-version: ${{ env.NODE_VERSION }}
+    #   - name: Setup Node.js
+    #     uses: actions/setup-node@v6.4.0
+    #     with:
+    #       node-version: ${{ env.NODE_VERSION }}
 
-      - name: Enable Corepack (Yarn)
-        run: corepack enable
+    #   - name: Enable Corepack (Yarn)
+    #     run: corepack enable
 
-      - name: Install dependencies
-        run: yarn install
+    #   - name: Install dependencies
+    #     run: yarn install
 
-      - name: Pull Vercel Production Config
-        run: |
-          yarn vercel pull --yes \
-          --environment=production \
-          --token=$VERCEL_TOKEN \
-          --scope=$VERCEL_SCOPE
+    #   - name: Pull Vercel Production Config
+    #     run: |
+    #       yarn vercel pull --yes \
+    #       --environment=production \
+    #       --token=$VERCEL_TOKEN \
+    #       --scope=$VERCEL_SCOPE
 
-      - name: Build for Production
+      - name: Deploy for Production
         run: yarn vercel build --prod --token=$VERCEL_TOKEN
       - name: Deploy to Production
-        run: yarn vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN
+        run: |
+          yarn vercel --prod \
+          --token=$VERCEL_TOKEN \
+          --scope=$VERCEL_SCOPE
